@@ -31,13 +31,11 @@ Every target is placed on a trajectory the generator actually simulated with the
 
 The app is a Progressive Web App, so it installs straight from Safari with no App Store:
 
-1. Open the app's URL in **Safari** (once GitHub Pages is enabled, that is `https://aizad-eng.github.io/App/`).
+1. Open **https://aizad-eng.github.io/App/** in **Safari** on your iPhone.
 2. Tap the **Share** button, then **Add to Home Screen**.
 3. Launch it from the home screen. It runs full-screen and works offline.
 
-### Enabling the hosted version (one-time)
-
-The included GitHub Actions workflow deploys the `www/` folder to GitHub Pages on every push to `main`. To turn it on: repository **Settings → Pages → Build and deployment → Source: GitHub Actions**. The first deployment runs on the next push (or from the Actions tab via "Run workflow").
+Hosting is GitHub Pages, deploying the `main` branch (Settings → Pages → Source: Deploy from a branch, `main`, root). The root page redirects into `www/`, so every push to `main` updates the live game within a minute or two.
 
 ## Run locally
 
@@ -78,5 +76,5 @@ www/               the app (static, no build step)
   icons/
 tools/make_icons.py   regenerates the icons (pure Python)
 capacitor.config.json native wrapper config
-.github/workflows/pages.yml  GitHub Pages deploy
+index.html            redirects the GitHub Pages root into www/
 ```
