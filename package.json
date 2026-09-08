@@ -1,0 +1,18 @@
+{
+  "name": "sharpshot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SharpShot: unlimited precision shooting challenges (PWA + Capacitor iOS wrapper)",
+  "scripts": {
+    "start": "npx --yes serve www -l 8080",
+    "icons": "python3 tools/make_icons.py",
+    "ios:add": "npx cap add ios",
+    "ios:sync": "npx cap sync ios",
+    "ios:open": "npx cap open ios"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.0",
+    "@capacitor/core": "^6.1.0",
+    "@capacitor/ios": "^6.1.0"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "appId": "com.aizad.sharpshot",
+  "appName": "SharpShot",
+  "webDir": "www",
+  "server": { "androidScheme": "https" },
+  "ios": { "contentInset": "never", "backgroundColor": "#0f1124" }
+}
