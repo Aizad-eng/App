@@ -35,6 +35,15 @@
     }
   }
 
+  /* Where the gun is right now: fixed in drag mode, riding a rail in timing mode. */
+  function shooterPos(level, time) {
+    const s = level.shooter;
+    if (level.control !== 'timing') return { x: s.x, y: s.y };
+    const range = s.yMax - s.yMin;
+    const m = (time * s.speed + s.phase * range * 2) % (range * 2);
+    return { x: s.x, y: s.yMin + (m < range ? m : range * 2 - m) };
+  }
+
   /* All solid rectangles at a given time: {x,y,w,h,angle,type,ref} */
   function obstacleRects(level, time) {
     const out = [];
@@ -127,7 +136,8 @@
       if (!alive.length) return false;
       const h = alive[Math.floor(Math.random() * alive.length)];
       this.attempts += 1;
-      this.hintPath = this._trace(h.angle, h.speed, 2.2);
+      this.hintPath = this._trace(h.angle, h.speed, 2.2, h.shooterY);
+      this.hintY = this.level.control === 'timing' ? h.shooterY : null;
       this.hintUntil = this.time + 4;
       this._emit();
       return true;
@@ -155,6 +165,7 @@
         if (this.status !== 'playing' || !this.running) return;
         if (this.pointer && this.pointer.id !== e.pointerId) return;
         e.preventDefault();
+        if (this.level.control === 'timing') { this._fire(); return; }
         c.setPointerCapture && c.setPointerCapture(e.pointerId);
         const p = toLogical(e);
         this.pointer = { id: e.pointerId, sx: p.x, sy: p.y, x: p.x, y: p.y };
@@ -202,12 +213,13 @@
 
     _shotAngle() {
       const wep = this._weapon();
-      let a = this.aim.angle;
+      let a = this.level.control === 'timing' ? this.level.fixedAngle : this.aim.angle;
       if (wep.sway) a += (0.035 * Math.sin(this.time * 2.1) + 0.02 * Math.sin(this.time * 5.3 + 1)) * wep.sway;
       return a;
     }
     _shotSpeed() {
       const wep = this._weapon();
+      if (this.level.control === 'timing') return this.level.fixedSpeed;
       if (wep.kind === 'gun') return wep.speed;
       return wep.speedMin + (wep.speedMax - wep.speedMin) * this.aim.power;
     }
@@ -218,7 +230,7 @@
       const wep = this._weapon();
       const angle = this._shotAngle();
       const speed = this._shotSpeed();
-      const s = this.level.shooter;
+      const s = shooterPos(this.level, this.time);
       const dir = { x: -Math.cos(angle), y: -Math.sin(angle) };
       this.projectile = {
         x: s.x + dir.x * 46, y: s.y + dir.y * 46, vx: dir.x * speed, vy: dir.y * speed,
@@ -230,9 +242,11 @@
       this._emit('shot');
     }
 
-    _trace(angle, speed, seconds) {
+    _trace(angle, speed, seconds, startY) {
       const wep = this._weapon();
-      const p = { x: this.level.shooter.x - Math.cos(angle) * 46, y: this.level.shooter.y - Math.sin(angle) * 46, vx: -Math.cos(angle) * speed, vy: -Math.sin(angle) * speed };
+      const s = shooterPos(this.level, this.time);
+      const y0 = startY === undefined ? s.y : startY;
+      const p = { x: s.x - Math.cos(angle) * 46, y: y0 - Math.sin(angle) * 46, vx: -Math.cos(angle) * speed, vy: -Math.sin(angle) * speed };
       const rects = obstacleRects(this.level, this.time);
       const dt = 1 / 240; const pts = [];
       for (let i = 0; i < seconds * 240; i++) {
@@ -481,8 +495,24 @@
     }
 
     _drawShooter(ctx) {
-      const L = this.level, s = L.shooter, wep = this._weapon();
-      const angle = this.aim.active ? this._shotAngle() : this.aim.angle;
+      const L = this.level, wep = this._weapon();
+      const timing = L.control === 'timing';
+      const s = shooterPos(L, this.time);
+      const angle = (timing || this.aim.active) ? this._shotAngle() : this.aim.angle;
+      if (timing) {
+        // rail the gun rides on
+        const r = L.shooter;
+        ctx.strokeStyle = 'rgba(255,255,255,0.28)'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(W - 22, r.yMin); ctx.lineTo(W - 22, r.yMax); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.beginPath(); ctx.arc(W - 22, r.yMin, 8, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.arc(W - 22, r.yMax, 8, 0, TAU); ctx.fill();
+        if (this.hintPath && this.time < this.hintUntil && this.hintY !== null) {
+          ctx.strokeStyle = 'rgba(255,209,102,0.95)'; ctx.lineWidth = 5;
+          ctx.beginPath(); ctx.moveTo(W - 48, this.hintY); ctx.lineTo(W, this.hintY); ctx.stroke();
+        }
+        ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(W - 22, s.y, 12, 0, TAU); ctx.fill();
+      }
       // arm from the right edge
       ctx.strokeStyle = '#f1c9a5'; ctx.lineWidth = 30; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(W + 30, s.y + 90); ctx.lineTo(s.x + 20, s.y + 10); ctx.stroke();
@@ -495,19 +525,20 @@
       ctx.restore();
 
       // aim guide
-      if (this.aim.active && this.status === 'playing' && this.settings.aimGuide !== 'off') {
+      if ((timing || this.aim.active) && this.status === 'playing' && this.settings.aimGuide !== 'off') {
         const full = this.settings.aimGuide === 'full';
         const secs = wep.kind === 'gun' ? (full ? 1.2 : 0.16) : (full ? 0.7 : 0.28);
         const pts = this._trace(this._shotAngle(), this._shotSpeed(), secs);
         this._drawPath(ctx, pts, 'rgba(255,255,255,0.85)', 5);
-        if (wep.kind === 'arc') {
+        if (wep.kind === 'arc' && !timing) {
           // power bar
           ctx.fillStyle = 'rgba(0,0,0,0.4)'; roundRect(ctx, s.x - 60, s.y + 70, 120, 14, 7); ctx.fill();
           ctx.fillStyle = '#ffd166'; roundRect(ctx, s.x - 60, s.y + 70, 120 * this.aim.power, 14, 7); ctx.fill();
         }
-      } else if (this.status === 'playing' && !this.projectile && this.attempts === 0) {
+      }
+      if (this.status === 'playing' && !this.projectile && this.attempts === 0) {
         ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.font = 'bold 34px system-ui, sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('Drag anywhere to aim, release to fire', W / 2, H - 30);
+        ctx.fillText(timing ? 'Tap when the gun lines up' : 'Drag anywhere to aim, release to fire', W / 2, H - 30);
       }
     }
 
@@ -745,4 +776,5 @@
 
   window.SS.Game = Game;
   window.SS.targetPos = targetPos;
+  window.SS.shooterPos = shooterPos;
 })();

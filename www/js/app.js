@@ -7,7 +7,7 @@
   const SAVE_KEY = 'sharpshot.save.v1';
   const DEFAULT_SAVE = {
     endlessLevel: 1, best: {}, stars: {},
-    settings: { aimGuide: 'short', sound: true, camera: false, haptic: true, p1: 'Player 1', p2: 'Player 2', randomDiff: 'medium', duelDiff: 'medium', randomWeapon: '' },
+    settings: { control: 'timing', aimGuide: 'short', sound: true, camera: false, haptic: true, p1: 'Player 1', p2: 'Player 2', randomDiff: 'medium', duelDiff: 'medium', randomWeapon: '' },
     duel: { p1: 0, p2: 0, rounds: 0 },
   };
   let save = loadSave();
@@ -40,13 +40,14 @@
   const hudEl = $('#hud');
   const game = new SS.Game(canvas, { onState, insets: () => ({ top: (hudEl ? hudEl.offsetHeight : 0) + 6, bottom: 10 }) });
 
-  function levelCode(seed, tier) { return `${tier}-${seedToCode(seed)}`; }
+  // Codes look like 7T-K3P9A2: tier, T for tap-timing (no letter = drag aim), then the seed.
+  function levelCode(seed, tier, control) { return `${tier}${control === 'timing' ? 'T' : ''}-${seedToCode(seed)}`; }
   function parseCode(code) {
-    const m = String(code || '').trim().toUpperCase().match(/^(\d{1,3})\s*[-_ ]\s*([0-9A-Z]{1,8})$/);
+    const m = String(code || '').trim().toUpperCase().match(/^(\d{1,3})(T?)\s*[-_ ]\s*([0-9A-Z]{1,8})$/);
     if (!m) return null;
-    const seed = codeToSeed(m[2]); const tier = parseInt(m[1], 10);
+    const seed = codeToSeed(m[3]); const tier = parseInt(m[1], 10);
     if (seed === null || !(tier >= 1)) return null;
-    return { seed, tier };
+    return { seed, tier, control: m[2] === 'T' ? 'timing' : 'drag' };
   }
   function randomSeed() {
     if (window.crypto && crypto.getRandomValues) { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] >>> 0; }
@@ -90,7 +91,8 @@
   /* ---------- starting levels ---------- */
   function beginLevel(mode, seed, tier, extra) {
     session.mode = mode; session.seed = seed >>> 0; session.tier = tier;
-    session.level = generateLevel(session.seed, tier, { weapon: extra && extra.weapon });
+    session.control = (extra && extra.control) || save.settings.control || 'timing';
+    session.level = generateLevel(session.seed, tier, { weapon: extra && extra.weapon, control: session.control });
     if (mode !== 'duel') { session.player = 1; session.results = {}; }
     game.setLevel(session.level);
     applyGameSettings();
@@ -111,6 +113,7 @@
 
   function levelExtras(L) {
     const parts = [];
+    if (L.control === 'timing' && WEAPONS[L.weapon].kind === 'arc') parts.push('Fixed arc');
     if (L.wind) parts.push('Wind');
     if (L.timeLimit) parts.push(`${L.timeLimit}s limit`);
     if (L.obstacles.some(o => o.type === 'glass')) parts.push('Glass');
@@ -129,7 +132,7 @@
     $('#intro-targets').textContent = L.summary;
     $('#intro-par').textContent = `${L.par} shots (max ${L.attemptsMax})`;
     $('#intro-extras').textContent = levelExtras(L);
-    $('#intro-code').textContent = levelCode(session.seed, session.tier);
+    $('#intro-code').textContent = levelCode(session.seed, session.tier, session.control);
     const pl = $('#intro-player');
     if (session.mode === 'duel') { pl.hidden = false; pl.textContent = `${playerName(session.player)}, you're up`; }
     else pl.hidden = true;
@@ -188,7 +191,7 @@
 
   function showResult(result, reason, st) {
     const L = session.level;
-    const code = levelCode(session.seed, session.tier);
+    const code = levelCode(session.seed, session.tier, session.control);
     const eyebrow = $('#result-eyebrow'), title = $('#result-title'), stars = $('#result-stars'), detail = $('#result-detail');
     const btnNext = $('#btn-next'), btnRetry = $('#btn-retry'), score = $('#result-score');
     score.hidden = true;
@@ -258,15 +261,15 @@
 
   function nextAction() {
     setHidden($('#overlay-result'), true);
-    if (session.mode === 'endless') return beginLevel('endless', hashString('endless:' + (session.tier + 1)), session.tier + 1);
-    if (session.mode === 'random') return beginLevel('random', randomSeed(), randomTier(save.settings.randomDiff), { weapon: save.settings.randomWeapon });
+    if (session.mode === 'endless') return beginLevel('endless', hashString('endless:' + (session.tier + 1)), session.tier + 1, { control: session.control });
+    if (session.mode === 'random') return beginLevel('random', randomSeed(), randomTier(save.settings.randomDiff), { weapon: save.settings.randomWeapon, control: session.control });
     if (session.mode === 'duel') {
       if (session.player === 1) {
         session.player = 2;
         game.setLevel(session.level); applyGameSettings(); showIntro();
       } else {
         session.player = 1; session.results = {};
-        beginLevel('duel', randomSeed(), session.nextDuelTier || session.tier);
+        beginLevel('duel', randomSeed(), session.nextDuelTier || session.tier, { control: session.control });
       }
       return;
     }
@@ -289,7 +292,7 @@
   }
 
   async function shareCode() {
-    const code = levelCode(session.seed, session.tier);
+    const code = levelCode(session.seed, session.tier, session.control);
     const url = `${location.origin}${location.pathname}#${code}`;
     const text = `Beat my SharpShot level "${session.level.name}"! Code ${code}`;
     if (navigator.share) { try { await navigator.share({ title: 'SharpShot', text, url }); return; } catch (e) { /* cancelled */ } }
@@ -300,7 +303,7 @@
   function refreshHome() {
     $('#endless-sub').textContent = `Level ${save.endlessLevel}`;
     const d = dayInfo();
-    const code = levelCode(hashString('daily:' + d.key), dailyTier());
+    const code = levelCode(hashString('daily:' + d.key), dailyTier(), save.settings.control);
     const best = save.best[code];
     $('#daily-sub').textContent = best ? `${d.label} • your best: ${best} shots` : `${d.label} • same level for everyone`;
     const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -310,6 +313,7 @@
   function dailyTier() { return 3 + (dayInfo().dayIndex % 9); }
 
   function syncSettingsUI() {
+    $$('#seg-control button').forEach(b => b.classList.toggle('on', b.dataset.v === save.settings.control));
     $$('#seg-aim button').forEach(b => b.classList.toggle('on', b.dataset.v === save.settings.aimGuide));
     $('#tog-sound').checked = !!save.settings.sound;
     $('#tog-camera').checked = !!save.settings.camera;
@@ -345,6 +349,7 @@
     segHandler('#seg-diff', v => { save.settings.randomDiff = v; persist(); });
     segHandler('#seg-weapon', v => { save.settings.randomWeapon = v; persist(); });
     segHandler('#seg-duel-diff', v => { save.settings.duelDiff = v; persist(); });
+    segHandler('#seg-control', v => { save.settings.control = v; persist(); refreshHome(); });
     segHandler('#seg-aim', v => { save.settings.aimGuide = v; persist(); applyGameSettings(); });
 
     $('#btn-random-go').addEventListener('click', () => beginLevel('random', randomSeed(), randomTier(save.settings.randomDiff), { weapon: save.settings.randomWeapon }));
@@ -352,7 +357,7 @@
       const p = parseCode($('#code-input').value);
       if (!p) return toast('That code does not look right');
       $('#code-input').blur();
-      beginLevel('random', p.seed, p.tier);
+      beginLevel('random', p.seed, p.tier, { control: p.control });
     });
     $('#code-input').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btn-code-go').click(); });
 
@@ -403,7 +408,7 @@
 
   function handleHashCode() {
     const p = parseCode(location.hash.slice(1));
-    if (p) { history.replaceState(null, '', location.pathname); beginLevel('random', p.seed, p.tier); return true; }
+    if (p) { history.replaceState(null, '', location.pathname); beginLevel('random', p.seed, p.tier, { control: p.control }); return true; }
     return false;
   }
 
@@ -412,6 +417,7 @@
     window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
   }
 
+  SS.game = game;
   bind();
   syncSettingsUI();
   refreshHome();

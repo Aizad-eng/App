@@ -1,6 +1,6 @@
 # SharpShot
 
-Unlimited precision shooting challenges for your phone. Drag to aim, release to fire, and put every shot through the gaps in the wooden post to knock down the bottles, cans, balloons and more on the other side.
+Unlimited precision shooting challenges for your phone. The gun rides up and down on its own; tap at the right moment to put the shot through the gaps in the wooden post and knock down the bottles, cans, balloons and more on the other side.
 
 Inspired by the split-screen "hit all the bottles in fewer attempts" challenge videos, but with an endless supply of generated levels.
 
@@ -11,9 +11,16 @@ Inspired by the split-screen "hit all the bottles in fewer attempts" challenge v
 | **Endless** | A never-ending campaign. Each level is generated from its number, so level 37 is the same for everyone and always replayable. |
 | **Duel** | Two players, one phone. Both get the exact same level; fewer shots to clear it wins the round. Ties go to sudden death. Running score is kept. |
 | **Daily challenge** | One new level per day, identical for every player. |
-| **Random & codes** | Pick a difficulty (Easy to Insane) and optionally a weapon, and get a fresh level. Every level has a code like `7-K3P9A2` that you can share and replay. |
+| **Random & codes** | Pick a difficulty (Easy to Insane) and optionally a weapon, and get a fresh level. Every level has a code like `7T-K3P9A2` that you can share and replay. |
 
 Optional **camera background** shows the front camera behind the targets so both players appear on screen, like the original videos. Nothing is recorded or uploaded.
+
+## Controls
+
+- **Tap timing (default)**: the gun slides up and down a rail on the right. Tap anywhere at the right moment to fire straight ahead. Bows and slingshots fire at a fixed arc, so timing is everything.
+- **Drag to aim** (Settings): pull back like a slingshot and release. Pull length sets the power for arc weapons.
+
+Level codes carry the control mode: `7T-K3P9A2` is a tap-timing level, `7-K3P9A2` a drag-to-aim one.
 
 ## What makes levels unlimited
 

@@ -100,6 +100,12 @@
   <section id="screen-settings" class="screen">
     <header class="topbar"><button class="btn icon" data-back>&larr;</button><h2>Settings</h2><span></span></header>
     <div class="panel">
+      <p class="label">Controls</p>
+      <div class="seg" id="seg-control">
+        <button data-v="timing">Tap timing</button>
+        <button data-v="drag">Drag to aim</button>
+      </div>
+      <p class="hint">Tap timing: the gun rides up and down on its own, tap at the right moment to fire. Drag to aim: pull back like a slingshot and release.</p>
       <p class="label">Aim guide</p>
       <div class="seg" id="seg-aim">
         <button data-v="off">Off</button>
@@ -112,7 +118,7 @@
       <p class="hint">Uses the front camera so you and your opponent appear behind the targets, like the video. Nothing is recorded or uploaded.</p>
       <label class="toggle"><span>Haptics (if supported)</span><input type="checkbox" id="tog-haptic"></label>
       <button class="btn small danger" id="btn-reset">Reset all progress</button>
-      <p class="hint version">SharpShot v1.0</p>
+      <p class="hint version">SharpShot v1.1</p>
     </div>
   </section>
 
@@ -120,8 +126,10 @@
   <section id="screen-help" class="screen">
     <header class="topbar"><button class="btn icon" data-back>&larr;</button><h2>How to play</h2><span></span></header>
     <div class="panel help">
-      <h3>Aim &amp; fire</h3>
-      <p>Touch anywhere and <b>drag away from the target</b> like a slingshot: pull right to shoot left, pull down to shoot higher. Release to fire. Drag back to the start point to cancel.</p>
+      <h3>Tap timing (default)</h3>
+      <p>The gun slides up and down the rail on the right by itself. <b>Tap anywhere at the right moment</b> to fire straight ahead. Line the shot up with a gap in the post and a target, and time it. Bows and slingshots fire at a fixed arc, so the timing is all that matters.</p>
+      <h3>Drag to aim (optional)</h3>
+      <p>Switch in Settings. Touch anywhere and <b>drag away from the target</b> like a slingshot: pull right to shoot left, pull down to shoot higher. Release to fire. Drag back to the start point to cancel.</p>
       <h3>Precision</h3>
       <p>Guns fire fast but still drop a little. Bows, slingshots and knives arc, and the pull length sets the power. Wind pushes slow projectiles. The sniper rifle sways, so time your release.</p>
       <h3>The post</h3>
@@ -131,7 +139,7 @@
       <h3>Unlimited levels</h3>
       <p>Every level is generated from a code. Endless mode never runs out, the daily challenge is the same for everyone, and any code can be shared and replayed.</p>
       <h3>Stuck?</h3>
-      <p>The hint button costs one shot and briefly shows a working trajectory.</p>
+      <p>The hint button costs one shot and briefly shows a working trajectory, plus a marker on the rail showing where to fire.</p>
     </div>
   </section>
 

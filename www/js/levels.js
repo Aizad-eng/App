@@ -97,9 +97,10 @@
 
   /* Simulate one shot and return the sampled path (or null if it hits a blocker before
      reaching the target zone). */
-  function tracePath(level, angle, speed, blockers, radius) {
+  function tracePath(level, angle, speed, blockers, radius, startY) {
     const wep = WEAPONS[level.weapon];
-    const p = { x: level.shooter.x, y: level.shooter.y, vx: -Math.cos(angle) * speed, vy: -Math.sin(angle) * speed };
+    const y0 = startY === undefined ? level.shooter.y : startY;
+    const p = { x: level.shooter.x, y: y0, vx: -Math.cos(angle) * speed, vy: -Math.sin(angle) * speed };
     const dt = 1 / 240;
     const path = [];
     const wind = level.wind * wep.windFactor;
@@ -151,13 +152,26 @@
     // ----- theme / wind / shooter -----
     const theme = THEMES[rng.int(0, THEMES.length - 1)];
     const wind = (t >= 4 && rng.chance(0.35 + d * 0.3)) ? rng.sign() * rng.float(90, 180 + d * 260) : 0;
-    const shooter = { x: SHOOTER_X, y: rng.float(H * 0.32, H * 0.78) };
+    const control = options.control === 'drag' ? 'drag' : 'timing';
+    let shooter;
+    if (control === 'timing') {
+      // The gun rides up and down a rail; the player taps at the right moment.
+      const yMin = H * 0.12, yMax = H * 0.86;
+      shooter = { x: SHOOTER_X, y: (yMin + yMax) / 2, yMin, yMax, speed: Math.round(380 + d * 720), phase: rng.float(0, 1) };
+    } else {
+      shooter = { x: SHOOTER_X, y: rng.float(H * 0.32, H * 0.78) };
+    }
 
     const level = {
-      seed, tier: t, weapon: weaponKey, theme, wind, shooter,
+      seed, tier: t, weapon: weaponKey, theme, wind, shooter, control,
       targets: [], obstacles: [], hints: [],
       timeLimit: 0, W, H,
     };
+    if (control === 'timing') {
+      // Fixed launch angle and power: only the timing of the tap matters.
+      level.fixedAngle = wep.kind === 'gun' ? 0 : rng.float(0.35, 0.75);
+      level.fixedSpeed = wep.kind === 'gun' ? wep.speed : rng.float(wep.speedMin + (wep.speedMax - wep.speedMin) * 0.35, wep.speedMax);
+    }
 
     let count = 1 + Math.floor(t / 2) + (t >= 3 ? rng.int(0, 1) : 0);
     count = Math.min(count, 7);
@@ -170,7 +184,8 @@
       const gapH = Math.round(H * (0.095 - d * 0.052)); // 171 -> ~80 px
       const gaps = [];
       // First gap sits within comfortable reach of the shooter, the rest are random.
-      const firstY0 = Math.min(H * 0.88 - gapH, Math.max(H * 0.12, shooter.y + rng.float(-150, 150) - gapH / 2));
+      const anchorY = control === 'timing' ? rng.float(H * 0.2, H * 0.8) : shooter.y;
+      const firstY0 = Math.min(H * 0.88 - gapH, Math.max(H * 0.12, anchorY + rng.float(-150, 150) - gapH / 2));
       gaps.push({ y0: firstY0, y1: firstY0 + gapH });
       let tries = 0;
       while (gaps.length < gapCount && tries++ < 200) {
@@ -232,8 +247,11 @@
     let attempts = 0;
     while (placed.length < count && attempts++ < 400) {
       // Sample a valid shot, then drop a target somewhere on its path in the target zone.
-      let angle, speed;
-      if (wep.kind === 'gun') {
+      let angle, speed, startY;
+      if (control === 'timing') {
+        angle = level.fixedAngle; speed = level.fixedSpeed;
+        startY = rng.float(shooter.yMin, shooter.yMax);
+      } else if (wep.kind === 'gun') {
         // Aim through a random point inside a random gap, correcting for bullet drop.
         const post = level.obstacles.find(o => o.type === 'post');
         const gap = rng.pick(post.gaps.filter(g => !g.glass));
@@ -245,7 +263,7 @@
         angle = rng.float(-0.3, 1.35);
         speed = rng.float(wep.speedMin, wep.speedMax);
       }
-      const trace = tracePath(level, angle, speed, blockers, wep.r);
+      const trace = tracePath(level, angle, speed, blockers, wep.r, startY);
       const zone = trace.path.filter(pt => pt.x >= TARGET_X_MIN && pt.x <= TARGET_X_MAX && pt.y >= H * 0.08 && pt.y <= H * 0.93);
       if (trace.blocked || zone.length === 0) continue;
       const pt = zone[rng.int(0, zone.length - 1)];
@@ -269,7 +287,7 @@
       }
       const target = { id: placed.length, type: typeKey, x: pt.x, y: pt.y, w, h, round: !!spec.round, motion, hp: 1 };
       placed.push(target);
-      level.hints.push({ targetId: target.id, angle, speed });
+      level.hints.push({ targetId: target.id, angle, speed, shooterY: control === 'timing' ? startY : shooter.y });
     }
     level.targets = placed;
 

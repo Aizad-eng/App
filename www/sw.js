@@ -1,5 +1,5 @@
 /* Offline-first service worker: caches the app shell so it works without a network. */
-const VERSION = 'sharpshot-v1.0.0';
+const VERSION = 'sharpshot-v1.1.0';
 const SHELL = [
   './', './index.html', './css/style.css',
   './js/rng.js', './js/levels.js', './js/audio.js', './js/game.js', './js/app.js',
