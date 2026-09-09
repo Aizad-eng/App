@@ -1,38 +1,31 @@
-# SharpShot
+# Hue Hop
 
-Unlimited precision shooting challenges for your phone. The gun rides up and down on its own; tap at the right moment to put the shot through the gaps in the wooden post and knock down the bottles, cans, balloons and more on the other side.
+A tap-to-bounce arcade game for your phone. Keep a glowing ball climbing through spinning colour obstacles. The ball only passes through the part of each obstacle that matches its own colour; touch any other colour and the run is over.
 
-Inspired by the split-screen "hit all the bottles in fewer attempts" challenge videos, but with an endless supply of generated levels.
+## How to play
 
-## Game modes
+- **Tap** anywhere to make the ball jump. Gravity pulls it back down, so keep tapping.
+- **Match the colour.** Every obstacle is split into coloured segments and rotates. Time your jumps so you pass through your own colour.
+- **Stars** sit in the middle of every obstacle. Each one is a point.
+- **Colour wheels** between obstacles change your colour to a new one, so re-read the next obstacle before you go through.
+- Fall off the bottom of the screen and it's game over too.
 
-| Mode | What it is |
+Your best score and game count are saved on the device.
+
+## Obstacles
+
+New shapes unlock as your score climbs, and everything spins faster the further you get:
+
+| Score | Shape |
 | --- | --- |
-| **Endless** | A never-ending campaign. Each level is generated from its number, so level 37 is the same for everyone and always replayable. |
-| **Duel** | Two players, one phone. Both get the exact same level; fewer shots to clear it wins the round. Ties go to sudden death. Running score is kept. |
-| **Daily challenge** | One new level per day, identical for every player. |
-| **Random & codes** | Pick a difficulty (Easy to Insane) and optionally a weapon, and get a fresh level. Every level has a code like `7T-K3P9A2` that you can share and replay. |
-
-Optional **camera background** shows the front camera behind the targets so both players appear on screen, like the original videos. Nothing is recorded or uploaded.
-
-## Controls
-
-- **Tap timing (default)**: the gun slides up and down a rail on the right. Tap anywhere at the right moment to fire straight ahead. Bows and slingshots fire at a fixed arc, so timing is everything.
-- **Drag to aim** (Settings): pull back like a slingshot and release. Pull length sets the power for arc weapons.
-
-Level codes carry the control mode: `7T-K3P9A2` is a tap-timing level, `7-K3P9A2` a drag-to-aim one.
-
-## What makes levels unlimited
-
-Every level comes from a seed and a difficulty tier. The generator mixes:
-
-- 8 weapons: pistol, revolver, sniper rifle (with sway), crossbow, shuriken, bow, slingshot and throwing knife. Guns fire straight with a little drop; the others arc, with pull length setting the power.
-- 13 target types: bottles, cans, balloons, plates, apples, ducks, cups, vases, bulbs, clay discs, tomatoes, eggs and coins. Targets shrink as the tier rises.
-- Target motion: bobbing, sliding, swinging on ropes, rising, flying across, orbiting.
-- Obstacles: the signature wooden post with narrowing gaps, glass panes that cost a shot to break, sliding planks, spinning bars and walls to lob over.
-- Wind, time limits, par shot counts and a shot cap.
-
-Every target is placed on a trajectory the generator actually simulated with the same physics the game uses, so every level is solvable. The hint button (costs one shot) replays one of those trajectories.
+| 0 | Circle ring, sliding colour line |
+| 3 | Square ring |
+| 6 | Double circle (counter-rotating) |
+| 9 | Triangle (three colours only, the wheel before it never gives you the missing colour) |
+| 12 | Spinning cross |
+| 16 | Hexagon |
+| 20 | Circle inside a square |
+| 25 | Triple circle |
 
 ## Install on iPhone
 
@@ -54,7 +47,7 @@ npm start            # serves www/ on http://localhost:8080
 python3 -m http.server 8080 --directory www
 ```
 
-To test on your phone, open your computer's local IP on the same Wi-Fi network. Note that the camera background and installation need HTTPS (or localhost), so use the hosted version for those.
+On a desktop browser you can also press Space to jump.
 
 ## Native iOS build (optional)
 
@@ -73,11 +66,9 @@ npm run ios:open     # opens Xcode; run on your device
 www/               the app (static, no build step)
   index.html       screens and HUD
   css/style.css
-  js/rng.js        seeded random numbers + level codes
-  js/levels.js     procedural level generator
-  js/game.js       physics, input and rendering
+  js/game.js       physics, obstacles, collision and rendering
   js/audio.js      synthesized sound effects
-  js/app.js        modes, progress, PWA glue
+  js/app.js        screens, score persistence, PWA glue
   sw.js            offline cache
   manifest.webmanifest
   icons/

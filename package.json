@@ -1,8 +1,8 @@
 {
-  "name": "sharpshot",
+  "name": "huehop",
   "version": "1.0.0",
   "private": true,
-  "description": "SharpShot: unlimited precision shooting challenges (PWA + Capacitor iOS wrapper)",
+  "description": "Hue Hop: tap-to-bounce colour matching arcade game (PWA + Capacitor iOS wrapper)",
   "scripts": {
     "start": "npx --yes serve www -l 8080",
     "icons": "python3 tools/make_icons.py",

@@ -1,7 +1,7 @@
 {
-  "appId": "com.aizad.sharpshot",
-  "appName": "SharpShot",
+  "appId": "com.aizad.huehop",
+  "appName": "Hue Hop",
   "webDir": "www",
   "server": { "androidScheme": "https" },
-  "ios": { "contentInset": "never", "backgroundColor": "#0f1124" }
+  "ios": { "contentInset": "never", "backgroundColor": "#12121d" }
 }

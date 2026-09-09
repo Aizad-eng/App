@@ -12,15 +12,16 @@ def lerp(a, b, t):
     return tuple(a[i] + (b[i] - a[i]) * t for i in range(3))
 
 def render(size, maskable=False):
+    """A white ball inside a four-colour ring on a dark rounded square."""
     px = []
     S = size
     c = S / 2
+    cols = [(0xf6, 0xdf, 0x0e), (0xff, 0x2d, 0x8a), (0x8c, 0x2b, 0xff), (0x35, 0xe2, 0xf2)]
     for y in range(S):
         row = bytearray()
         for x in range(S):
-            u, v = (x + 0.5) / S, (y + 0.5) / S
-            # background: rounded square (or full bleed for maskable) with vertical gradient
-            bg = lerp((0x2b, 0x2f, 0x7a), (0x14, 0x16, 0x33), v)
+            v = (y + 0.5) / S
+            bg = lerp((0x26, 0x26, 0x4a), (0x12, 0x12, 0x1d), v)
             if maskable:
                 a_bg = 1.0
             else:
@@ -30,42 +31,17 @@ def render(size, maskable=False):
                 d = math.hypot(dx, dy) - r
                 a_bg = 1 - smooth(-1.0, 1.0, d)
             col = bg
-            # crosshair ring
             scale = 0.78 if maskable else 1.0
             R = S * 0.30 * scale
-            thick = S * 0.045 * scale
-            dist = math.hypot(x + 0.5 - c, y + 0.5 - c)
+            thick = S * 0.085 * scale
+            ex, ey = x + 0.5 - c, y + 0.5 - c
+            dist = math.hypot(ex, ey)
             ring = 1 - smooth(thick / 2 - 1, thick / 2 + 1, abs(dist - R))
-            # crosshair lines (with gaps near the centre)
-            lw = S * 0.032 * scale
-            gap = S * 0.12 * scale
-            ext = S * 0.40 * scale
-            ax, ay = abs(x + 0.5 - c), abs(y + 0.5 - c)
-            hline = 1 - smooth(lw / 2 - 1, lw / 2 + 1, ay)
-            hline *= smooth(gap - 1, gap + 1, ax) * (1 - smooth(ext - 1, ext + 1, ax))
-            vline = 1 - smooth(lw / 2 - 1, lw / 2 + 1, ax)
-            vline *= smooth(gap - 1, gap + 1, ay) * (1 - smooth(ext - 1, ext + 1, ay))
-            pink = (0xff, 0x4f, 0x7d)
-            k = max(ring, hline, vline)
-            col = lerp(col, pink, k)
-            # bottle silhouette in the middle (gold)
-            bw, bh = S * 0.075 * scale, S * 0.20 * scale
-            bx, by = x + 0.5 - c, y + 0.5 - c + S * 0.02 * scale
-            inside = 0.0
-            if -bh / 2 <= by <= bh / 2:
-                t = (by + bh / 2) / bh  # 0 top .. 1 bottom
-                if t < 0.28:
-                    half = bw * 0.32
-                else:
-                    half = bw * (0.32 + 0.68 * smooth(0.28, 0.5, t))
-                inside = 1 - smooth(half - 1, half + 1, abs(bx))
-                if by < -bh / 2 + 1.5 or by > bh / 2 - 1.5:
-                    inside *= 0.5
-            gold = (0xff, 0xd1, 0x66)
-            col = lerp(col, gold, inside)
-            # red label band
-            if inside > 0 and 0.58 <= (by + bh / 2) / bh <= 0.78:
-                col = lerp(col, (0xd1, 0x1a, 0x2a), inside)
+            ang = (math.atan2(ey, ex) + math.pi / 4) % (2 * math.pi)
+            seg = int(ang / (math.pi / 2)) % 4
+            col = lerp(col, cols[seg], ring)
+            ball = 1 - smooth(S * 0.11 * scale - 1, S * 0.11 * scale + 1, dist)
+            col = lerp(col, (255, 255, 255), ball)
             a = int(round(a_bg * 255))
             row += bytes((int(col[0]), int(col[1]), int(col[2]), a))
         px.append(bytes(row))
@@ -109,7 +85,7 @@ if __name__ == '__main__':
         row = bytearray()
         for i in range(0, len(r), 4):
             a = r[i + 3] / 255
-            row += bytes((int(r[i] * a + 0x14 * (1 - a)), int(r[i + 1] * a + 0x16 * (1 - a)), int(r[i + 2] * a + 0x33 * (1 - a)), 255))
+            row += bytes((int(r[i] * a + 0x12 * (1 - a)), int(r[i + 1] * a + 0x12 * (1 - a)), int(r[i + 2] * a + 0x1d * (1 - a)), 255))
         touch.append(bytes(row))
     write_png(os.path.join(OUT, 'apple-touch-icon.png'), 180, downsample(touch, 512, 180))
     mask = render(512, maskable=True)
