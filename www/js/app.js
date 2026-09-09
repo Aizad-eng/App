@@ -89,7 +89,12 @@
   let lastTouch = 0;
   document.addEventListener('touchend', e => { const now = Date.now(); if (now - lastTouch < 300 && e.target === canvas) e.preventDefault(); lastTouch = now; }, { passive: false });
 
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+    // When a new version takes over, reload once so the player never sees a stale build.
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (reloaded) return; reloaded = true; if (!game.started || game.dead) location.reload(); });
+  }
   refreshHome();
   show('screen-home');
 })();
